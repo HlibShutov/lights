@@ -1,0 +1,10 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: lights-postgres
+    environment:
+      POSTGRES_DB: light_db
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    ports:
+      - "5432:5432"

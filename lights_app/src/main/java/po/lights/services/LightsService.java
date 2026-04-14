@@ -22,6 +22,7 @@ public class LightsService {
     public UUID createSwitch(Switch lighSwitch) {
         UUID uuid = UUID.randomUUID();
         lighSwitch.setSwitchId(uuid);
+        lighSwitch.setEnabled(false);
         mqttService.publish("switch/create/request", uuid.toString());
         pendingSwitchStorage.add(lighSwitch);
         return uuid;
@@ -29,6 +30,7 @@ public class LightsService {
 
     public boolean toggleSwitch(UUID uuid) {
         Switch lightSwitch = switchRepository.findById(uuid).orElseThrow();
+        mqttService.publish("switch/toggle", uuid.toString());
         lightSwitch.setEnabled(!lightSwitch.isEnabled());
         switchRepository.save(lightSwitch);
         return lightSwitch.isEnabled();

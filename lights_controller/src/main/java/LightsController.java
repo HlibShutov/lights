@@ -19,24 +19,51 @@ public class LightsController {
         options.setAutomaticReconnect(true);
         options.setCleanSession(true);
 
+        client.setCallback(new MqttCallback() {
+            @Override
+            public void messageArrived(String topic, MqttMessage msg) throws Exception {
+                String payload = new String(msg.getPayload());
+
+                switch (topic) {
+                    case "switch/toggle": {
+                        UUID uuid = UUID.fromString(payload);
+                        Switch lightSwitch = lights.get(uuid);
+                        lightSwitch.setEnabled(!lightSwitch.isEnabled());
+                        System.out.println(lightSwitch.isEnabled());
+                        break;
+                    }
+
+                    case "switch/create/request": {
+                        UUID uuid = UUID.fromString(payload);
+
+                        Switch lightSwitch = new Switch(uuid, false);
+                        lights.put(uuid, lightSwitch);
+
+                        SwitchCreateResponse response = new SwitchCreateResponse();
+                        response.setSwitchId(uuid.toString());
+                        response.setApproved(true);
+
+                        String json = objectMapper.writeValueAsString(response);
+
+                        MqttMessage message = new MqttMessage(json.getBytes());
+                        message.setQos(1);
+
+                        client.publish("switch/create/response", message);
+                        break;
+                    }
+                }
+            }
+
+            @Override
+            public void connectionLost(Throwable cause) {}
+
+            @Override
+            public void deliveryComplete(IMqttDeliveryToken token) {}
+        });
+
         client.connect(options);
 
-        client.subscribe("switch/create/request", (topic, msg) -> {
-            String payload = new String(msg.getPayload());
-            UUID uuid = UUID.fromString(payload);
-
-            Switch lightSwitch = new Switch(uuid, false);
-            lights.put(uuid, lightSwitch);
-
-
-            SwitchCreateResponse response = new SwitchCreateResponse();
-            response.setSwitchId(uuid.toString());
-            response.setApproved(true);
-            String json = objectMapper.writeValueAsString(response);
-
-            MqttMessage message = new MqttMessage(json.getBytes());
-            message.setQos(1);
-            client.publish("switch/create/response", message);
-        });
+        client.subscribe("switch/toggle");
+        client.subscribe("switch/create/request");
     }
 }

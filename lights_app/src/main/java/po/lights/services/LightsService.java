@@ -5,6 +5,8 @@ import po.lights.models.Switch;
 import po.lights.repositories.PendingSwitchStorage;
 import po.lights.repositories.SwitchRepository;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -32,7 +34,20 @@ public class LightsService {
         Switch lightSwitch = switchRepository.findById(uuid).orElseThrow();
         mqttService.publish("switch/toggle", uuid.toString());
         lightSwitch.setEnabled(!lightSwitch.isEnabled());
+        if (lightSwitch.getLastEnabled() == null) lightSwitch.setLastEnabled(LocalDateTime.now());
+        if (lightSwitch.getTotalEnabled() == null) lightSwitch.setTotalEnabled(Duration.ZERO);
+        if (!lightSwitch.isEnabled()) {
+            LocalDateTime now = LocalDateTime.now();
+            Duration newDuration = Duration.between(lightSwitch.getLastEnabled(), now);
+            lightSwitch.setTotalEnabled(lightSwitch.getTotalEnabled().plus(newDuration));
+            lightSwitch.setLastEnabled(LocalDateTime.now());
+        }
         switchRepository.save(lightSwitch);
         return lightSwitch.isEnabled();
+    }
+
+    public Duration statsSwitch(UUID uuid) {
+        Switch lightSwitch = switchRepository.findById(uuid).orElseThrow();
+        return lightSwitch.getTotalEnabled();
     }
 }

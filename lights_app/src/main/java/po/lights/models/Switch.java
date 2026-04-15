@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -17,4 +19,6 @@ public class Switch {
     private UUID switchId;
     private String name;
     private boolean enabled;
+    private LocalDateTime lastEnabled;
+    private Duration totalEnabled;
 }

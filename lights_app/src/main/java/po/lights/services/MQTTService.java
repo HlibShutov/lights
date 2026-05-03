@@ -32,7 +32,18 @@ public class MQTTService {
         MqttConnectOptions options = new MqttConnectOptions();
         options.setCleanSession(true);
 
-        client.connect(options);
+        // client.connect(options);
+	while (!client.isConnected()) {
+            try {
+                client.connect(options);
+            } catch (Exception e) {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
         client.subscribe("switch/create/response", this::handleMessage);
     }
 

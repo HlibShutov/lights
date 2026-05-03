@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: lights-postgres
+    environment:
+      POSTGRES_DB: light_db
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mosquitto:
+    restart: unless-stopped
+    image: eclipse-mosquitto
+    container_name: lights-mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  lights_app:
+    build: ./lights_app
+    container_name: lights-app
+    depends_on:
+      - postgres
+      - mosquitto
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/light_db
+      SPRING_DATASOURCE_USERNAME: myuser
+      SPRING_DATASOURCE_PASSWORD: mypassword
+      MQTT_BROKER_HOST: mosquitto
+      MQTT_BROKER_PORT: 1883
+    ports:
+      - "8080:8080"
+
+  lights_controller:
+    build: ./lights_controller
+    container_name: lights-controller
+    depends_on:
+      - mosquitto
+    environment:
+      MQTT_BROKER_HOST: mosquitto
+      MQTT_BROKER_PORT: 1883
+
+volumes:
+  postgres_data:

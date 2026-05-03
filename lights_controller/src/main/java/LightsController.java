@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public class LightsController {
 
-    private static final String BROKER = "tcp://localhost:1883";
+    private static final String BROKER = "tcp://mosquitto:1883";
     private static final String CLIENT_ID = "light-controller";
     private static Map<UUID, Switch> lights = new HashMap();
     private static ObjectMapper objectMapper = new ObjectMapper();
